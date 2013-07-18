@@ -134,7 +134,7 @@ class DropboxTerm(cmd.Cmd):
         return[self.max, self.min, num_of_files, num_of_dir, size_counter, num_of_del]
 
     @command()
-    def reset(self):
+    def do_reset(self):
         self.frequency = [0] * len(self.extensions)
 
     @command()
