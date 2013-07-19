@@ -38,7 +38,6 @@ def command(login_required=True):
 
 class DropboxTerm(cmd.Cmd):
     """
-    A CLI for the Dropbox account
     """
     TOKEN_FILE = "token_store.txt"
 
@@ -47,7 +46,7 @@ class DropboxTerm(cmd.Cmd):
         self.app_key = app_key
         self.app_secret = app_secret
         self.current_path = '/'
-        self.account = {'display_name': 'guest'}    # Default user: guest
+        self.account = {'display_name': 'guest'}
 
         # Add to these. Only change to be made for additional extensions
         # to be included.
@@ -66,7 +65,7 @@ class DropboxTerm(cmd.Cmd):
             pass                                # don't worry if it's not there
 
         self.prompt = "[ " + self.account['display_name'] + "'s Dropbox ][ " \
-            + self.current_path + " ] $ "
+                + self.current_path + " ] $ "
 
     #
     # Command functions
@@ -87,45 +86,37 @@ class DropboxTerm(cmd.Cmd):
             self.min = {'path': '', 'bytes': float("inf")}  # Min = infinity
 
         for f in resp['contents']:
-            # If the folder is marked deleted
-            if 'is_deleted' in f.keys() and f['is_dir']:
-                print("* "),
-
-            # If the folder is marked deleted and recursive is True
             if 'is_deleted' in f.keys() and f['is_dir'] and rec:
                 ret = self.everything(rec, f['path'])
                 num_of_del += ret[2]
-            # If the file is marked deleted
+
             elif 'is_deleted' in f.keys() and not f['is_dir']:
                 num_of_del += 1
-            # If the folder is not deleted
-            elif f['is_dir'] and 'is_deleted' not in f.keys():
-                num_of_dir += 1
-                # If recursive is True, recurse through the current folder
-                if rec:
-                    ret = self.everything(rec, f['path'])
 
-                    if ret[0]['bytes'] > self.max['bytes']:
-                        self.max = {'path': ret['path'], 'bytes': ret['bytes']}
-                    if ret[1]['bytes'] < self.min['bytes']:
-                        self.min = {'path': ret['path'], 'bytes': ret['bytes']}
-                    num_of_files += ret[2]
-                    num_of_dir += ret[3]
-                    size_counter += ret[4]
-                    num_of_del += ret[5]
-            # If the node is a file
+            elif f['is_dir'] and rec:
+                num_of_dir += 1
+                ret = self.everything(rec, f['path'])
+
+                if ret[0]['bytes'] > self.max['bytes']:
+                    self.max = {'path': ret['path'], 'bytes': ret['bytes']}
+                if ret[1]['bytes'] < self.min['bytes']:
+                    self.min = {'path': ret['path'], 'bytes': ret['bytes']}
+                num_of_files += ret[2]
+                num_of_dir += ret[3]
+                size_counter += ret[4]
+                num_of_del += ret[5]
+
             elif not f['is_dir']:
                 num_of_files += 1
+                num_of_dir += 1
                 size_counter += f['bytes']
 
-                # Check if extension exists in extension list and increment
                 if "." in f['path']:
                     extension = f['path'].split(".")[-1]
                     if extension in self.extensions:
                         index = self.extensions.index(extension)
                         self.frequency[index] += 1
 
-                # Max, min bytes
                 if f['bytes'] < self.min['bytes']:
                     self.min = {'path': f['path'], 'bytes': f['bytes']}
                 if f['bytes'] > self.max['bytes']:
@@ -134,20 +125,7 @@ class DropboxTerm(cmd.Cmd):
         return[self.max, self.min, num_of_files, num_of_dir, size_counter, num_of_del]
 
     @command()
-    def do_reset(self):
-        self.frequency = [0] * len(self.extensions)
-
-    @command()
-    def do_it(self, rec=False, path=""):
-        """
-        Get all the requested data from the logged in user
-
-        Usage:
-            * it
-            * it True
-              Do "it" by recursing through folders
-            * it
-        """
+    def do_it(self, rec=True, path=""):
         if path == "":
             path = self.current_path
         ret = self.everything(rec, path)
@@ -172,6 +150,7 @@ class DropboxTerm(cmd.Cmd):
     #
     # Non important utilities like account_info, cd, ls, pwd
     #
+
     @command()
     def do_account_info(self):
         """
@@ -288,10 +267,6 @@ class DropboxTerm(cmd.Cmd):
         with open(self.TOKEN_FILE, 'w') as f:
             f.write(access_token)
         self.api_client = client.DropboxClient(access_token)
-        self.account = self.api_client.account_info()
-        self.prompt = "[ " + self.account['display_name'] + "'s Dropbox ][ " \
-            + self.current_path + " ] $ "
-
 
     @command()
     def do_logout(self):
