@@ -273,6 +273,9 @@ class DropboxTerm(cmd.Cmd):
     def do_login(self):
         """
         Log in to a Dropbox account
+
+        Usage:
+            * login
         """
         flow = client.DropboxOAuth2FlowNoRedirect(self.app_key, self.app_secret)
         authorize_url = flow.start()
@@ -299,6 +302,9 @@ class DropboxTerm(cmd.Cmd):
     def do_logout(self):
         """
         Log out of the current Dropbox account
+
+        Usage:
+            * logout
         """
         self.api_client = None
         os.unlink(self.TOKEN_FILE)
